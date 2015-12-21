@@ -1,0 +1,5 @@
+#!/bin/sh
+c_file="/tmp/grep_$( echo "$1 $2" | md5sum | cut -f1 -d' ').txt"
+[ -s $c_file ] && cursor=$( cat $c_file ) || cursor=0 
+echo "$( wc -l $1 | cut -f1 -d' ')">$c_file
+tail -n +$cursor $1 | egrep -q -m 1 "$2"
