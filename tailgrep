@@ -1,10 +1,17 @@
-#!/bin/python
+#!/usr/bin/python
 from hashlib import md5
 import sys
 import os
 
 import cPickle
 import re
+DEBUG = 1
+
+def dprint(string):
+    if DEBUG:
+        print string
+
+exitstatus = 0
 log_file = sys.argv[1]
 regex = sys.argv[2]
 c_file = "/tmp/grep_{0}.txt".format(md5("{0} {1}".format(log_file, regex)).hexdigest())
@@ -12,20 +19,26 @@ if os.path.isfile(c_file):
     with file(c_file, 'rb') as f:
         cursor = cPickle.load(f)
 else:
-    cursor = 0
     with file(log_file, 'r') as f:
         f.seek(0, 2)
         new_cursor = f.tell()
     with file(c_file, 'wb') as f:
+        dprint("No cursor found, saving {0}".format(new_cursor))
         cPickle.dump(new_cursor, f)
+    sys.exit(0)
 
 with file(log_file, 'r') as f:
+    dprint("Starting from {0}".format(cursor))
     f.seek(cursor)
-    for l in f.readline:
+    for l in f:
         if re.match(regex, l):
+            dprint('keyword is found!')
             exitstatus = 1
             break
     f.seek(0, 2)
     new_cursor = f.tell()
 with file(c_file, 'wb') as f:
+    dprint("saving cursor {0}".format(new_cursor))
     cPickle.dump(new_cursor, f)
+
+sys.exit(exitstatus)
