@@ -1,9 +1,31 @@
-#!/bin/sh
-c_file="/tmp/grep_$( echo "$1 $2" | md5sum | cut -f1 -d' ').txt"
-[ -s $c_file ] && cursor=$( cat $c_file ) || {
-    cursor=0 
-    echo "$( wc -l $1 | cut -f1 -d' ')">$c_file
-}
-tail -n +$cursor $1 | tee $c_file.tmp | egrep -q -m 1 "$2"
-echo "$(( $( wc -l $c_file.tmp | cut -f1 -d' ' ) + $cursor ))">$c_file
-rm -f $c_file.tmp
+#!/bin/python
+from hashlib import md5
+import sys
+import os
+
+import cPickle
+import re
+log_file = sys.argv[1]
+regex = sys.argv[2]
+c_file = "/tmp/grep_{0}.txt".format(md5("{0} {1}".format(log_file, regex)).hexdigest())
+if os.path.isfile(c_file):
+    with file(c_file, 'rb') as f:
+        cursor = cPickle.load(f)
+else:
+    cursor = 0
+    with file(log_file, 'r') as f:
+        f.seek(0, 2)
+        new_cursor = f.tell()
+    with file(c_file, 'wb') as f:
+        cPickle.dump(new_cursor, f)
+
+with file(log_file, 'r') as f:
+    f.seek(cursor)
+    for l in f.readline:
+        if re.match(regex, l):
+            exitstatus = 1
+            break
+    f.seek(0, 2)
+    new_cursor = f.tell()
+with file(c_file, 'wb') as f:
+    cPickle.dump(new_cursor, f)
